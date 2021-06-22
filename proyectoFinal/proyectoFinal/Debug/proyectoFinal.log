@@ -1,0 +1,9 @@
+﻿  main.cpp
+C:\Users\mario\Desktop\computacion grafica\proyectoFinal\proyectoFinal\main.cpp(123,30): warning C4244: 'initializing': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\mario\Desktop\computacion grafica\proyectoFinal\proyectoFinal\main.cpp(219,17): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\mario\Desktop\computacion grafica\proyectoFinal\proyectoFinal\main.cpp(220,17): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\mario\Desktop\computacion grafica\proyectoFinal\proyectoFinal\main.cpp(224,21): warning C4244: 'initializing': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\mario\Desktop\computacion grafica\proyectoFinal\proyectoFinal\main.cpp(225,21): warning C4244: 'initializing': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\mario\Desktop\computacion grafica\proyectoFinal\proyectoFinal\main.cpp(227,13): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\mario\Desktop\computacion grafica\proyectoFinal\proyectoFinal\main.cpp(228,13): warning C4244: '=': conversion from 'double' to 'GLfloat', possible loss of data
+  proyectoFinal.vcxproj -> C:\Users\mario\Desktop\computacion grafica\proyectoFinal\Debug\proyectoFinal.exe
