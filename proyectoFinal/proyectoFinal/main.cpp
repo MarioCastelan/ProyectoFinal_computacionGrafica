@@ -100,17 +100,15 @@ int main()
     // Setup and compile our shaders
     Shader shader("Shaders/modelLoading.vs", "Shaders/modelLoading.frag");
     Shader SkyBoxshader("Shaders/SkyBox.vs", "Shaders/SkyBox.frag");
-    // Load models     
-    //Model habitacion((char*)"Models/habitacion/habitacion.obj");
-    
- 
-
+    // Carga de modelos     
+    //    
+    //Habitacion
     Model habitacion((char*)"Models/habitacion/habitacion.obj");
     //juguete de medusas
     Model jugueteAnclaje((char*)"Models/jugueteMedusas/jugueteAnclaje.obj");
     Model juguete1((char*)"Models/jugueteMedusas/juguete1.obj");
     Model juguete2((char*)"Models/jugueteMedusas/juguete2.obj");
-
+    //
     Model trampolin((char*)"Models/trampolin/trampolin.obj");
     Model cama((char*)"Models/cama/cama.obj");
     Model pelota((char*)"Models/pelota/pelota.obj");
@@ -123,6 +121,33 @@ int main()
     Model puertaCuarto1((char*)"Models/puertas/puertaCuarto1.obj");
     Model marcoPuertaCuarto2((char*)"Models/puertas/marcoPuertaCuarto2.obj");
     Model puertaCuarto2((char*)"Models/puertas/puertaCuarto2.obj");
+    //Fachada
+    //
+    Model casa((char*)"Models/casa/casaFachada.obj");
+    //Medusa 1
+    Model medusa1((char*)"Models/medusas/medusa1.obj");
+    Model pata1_1((char*)"Models/medusas/pata1_1.obj");
+    Model pata1_2((char*)"Models/medusas/pata1_2.obj");
+    Model pata1_3((char*)"Models/medusas/pata1_3.obj");
+    Model pata1_4((char*)"Models/medusas/pata1_4.obj");
+    //Medusa 1
+    Model medusa2((char*)"Models/medusas/medusa2.obj");
+    Model pata2_1((char*)"Models/medusas/pata2_1.obj");
+    Model pata2_2((char*)"Models/medusas/pata2_2.obj");
+    Model pata2_3((char*)"Models/medusas/pata2_3.obj");
+    Model pata2_4((char*)"Models/medusas/pata2_4.obj");
+    //Flores
+    Model flor1((char*)"Models/flores/flor1.obj");
+    Model flor2((char*)"Models/flores/flor2.obj");
+    Model flor3((char*)"Models/flores/flor3.obj");
+    Model flor4((char*)"Models/flores/flor4.obj");
+    //
+    Model burbujas((char*)"Models/burbujas/burbujas.obj");
+    Model puertaCasa((char*)"Models/puertas/puertaCasa.obj"); //El marco de la puerta ya se encuentra en el modelo de la casa
+    //Ventanas de la casa, Los marcos de las ventanas ya se encuentran en el modelo de la casa
+    Model ventanaCasa1((char*)"Models/ventanas/ventanaCasa1.obj");
+    Model ventanaCasa2((char*)"Models/ventanas/ventanaCasa2.obj");
+
 
     //SKYBOx
     SkyBox fondo((char*)"Models/SkyBox/right.tga", (char*)"Models/SkyBox/left.tga", (char*)"Models/SkyBox/top.tga",
@@ -190,6 +215,33 @@ int main()
         marcoPuertaCuarto2.Draw(shader);
         puertaCuarto2.Draw(shader);
         
+        //Fachada
+        casa.Draw(shader);
+        //Medusa 1
+        medusa1.Draw(shader);
+        pata1_1.Draw(shader);
+        pata1_2.Draw(shader);
+        pata1_3.Draw(shader);
+        pata1_4.Draw(shader);
+        //Medusa 2
+        medusa2.Draw(shader);
+        pata2_1.Draw(shader);
+        pata2_2.Draw(shader);
+        pata2_3.Draw(shader);
+        pata2_4.Draw(shader);
+        //Flores
+        flor1.Draw(shader);
+        flor2.Draw(shader);
+        flor3.Draw(shader);
+        flor4.Draw(shader);
+        //
+        burbujas.Draw(shader);
+        puertaCasa.Draw(shader);
+        //Ventanas
+        ventanaCasa1.Draw(shader);
+        ventanaCasa2.Draw(shader);
+
+
 
         glfwSwapBuffers(window);
     }
