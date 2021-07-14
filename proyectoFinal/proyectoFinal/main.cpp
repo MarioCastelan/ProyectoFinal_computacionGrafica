@@ -101,11 +101,29 @@ int main()
     Shader shader("Shaders/modelLoading.vs", "Shaders/modelLoading.frag");
     Shader SkyBoxshader("Shaders/SkyBox.vs", "Shaders/SkyBox.frag");
     // Load models     
-    Model habitacion((char*)"Models/habitacion/habitacion.obj");
-    Model trampolin((char*)"Models/trampolin/trampolin.obj");
-    Model plato((char*)"Models/platoGary/plato.obj");
-  
+    //Model habitacion((char*)"Models/habitacion/habitacion.obj");
+    
  
+
+    Model habitacion((char*)"Models/habitacion/habitacion.obj");
+    //juguete de medusas
+    Model jugueteAnclaje((char*)"Models/jugueteMedusas/jugueteAnclaje.obj");
+    Model juguete1((char*)"Models/jugueteMedusas/juguete1.obj");
+    Model juguete2((char*)"Models/jugueteMedusas/juguete2.obj");
+
+    Model trampolin((char*)"Models/trampolin/trampolin.obj");
+    Model cama((char*)"Models/cama/cama.obj");
+    Model pelota((char*)"Models/pelota/pelota.obj");
+    Model reloj((char*)"Models/relojBarril/reloj.obj");
+    Model barril((char*)"Models/relojBarril/barril.obj");
+    Model plato((char*)"Models/platoGary/plato.obj");
+    Model ventanaCuarto((char*)"Models/ventanas/ventanaCuarto.obj");
+    //Puertas cuarto
+    Model marcoPuertaCuarto1((char*)"Models/puertas/marcoPuertaCuarto1.obj");
+    Model puertaCuarto1((char*)"Models/puertas/puertaCuarto1.obj");
+    Model marcoPuertaCuarto2((char*)"Models/puertas/marcoPuertaCuarto2.obj");
+    Model puertaCuarto2((char*)"Models/puertas/puertaCuarto2.obj");
+
     //SKYBOx
     SkyBox fondo((char*)"Models/SkyBox/right.tga", (char*)"Models/SkyBox/left.tga", (char*)"Models/SkyBox/top.tga",
         (char*)"Models/SkyBox/bottom.tga", (char*)"Models/SkyBox/back.tga", (char*)"Models/SkyBox/front.tga",
@@ -155,8 +173,23 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
         habitacion.Draw(shader);
-        plato.Draw(shader);
+        ventanaCuarto.Draw(shader);
         trampolin.Draw(shader);
+        cama.Draw(shader);
+        pelota.Draw(shader);
+        reloj.Draw(shader);
+        barril.Draw(shader);
+        plato.Draw(shader);
+        //Modelado jerarquico
+        jugueteAnclaje.Draw(shader);
+        juguete1.Draw(shader);
+        juguete2.Draw(shader);
+
+        marcoPuertaCuarto1.Draw(shader);
+        puertaCuarto1.Draw(shader);
+        marcoPuertaCuarto2.Draw(shader);
+        puertaCuarto2.Draw(shader);
+        
 
         glfwSwapBuffers(window);
     }
