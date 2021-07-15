@@ -1,0 +1,3 @@
+# Ignora las carpetas
+.vs/
+Debug/ 
