@@ -147,7 +147,16 @@ int main()
     //Ventanas de la casa, Los marcos de las ventanas ya se encuentran en el modelo de la casa
     Model ventanaCasa1((char*)"Models/ventanas/ventanaCasa1.obj");
     Model ventanaCasa2((char*)"Models/ventanas/ventanaCasa2.obj");
-
+    //Bob Esponja
+    Model cuerpoEsponja((char*)"Models/bobEsponja/cuerpo.obj");
+    Model brazoIzquierdo((char*)"Models/bobEsponja/brazoIzquierdo.obj");
+    Model brazoDerecho((char*)"Models/bobEsponja/brazoDerecho.obj");
+    Model pieIzquierdo((char*)"Models/bobEsponja/pieIzquierdo.obj");
+    Model pieDerecho((char*)"Models/bobEsponja/pieDerecho.obj");
+    //Gary
+    Model cuerpoGary((char*)"Models/gary/cuerpo.obj");
+    Model ojoIzquierdo((char*)"Models/gary/ojoIzquierdo.obj");
+    Model ojoDerecho((char*)"Models/gary/ojoDerecho.obj");
 
     //SKYBOx
     SkyBox fondo((char*)"Models/SkyBox/right.tga", (char*)"Models/SkyBox/left.tga", (char*)"Models/SkyBox/top.tga",
@@ -241,7 +250,16 @@ int main()
         ventanaCasa1.Draw(shader);
         ventanaCasa2.Draw(shader);
 
-
+        //Bob Esponja
+        cuerpoEsponja.Draw(shader);
+        brazoIzquierdo.Draw(shader);
+        brazoDerecho.Draw(shader);
+        pieIzquierdo.Draw(shader);
+        pieDerecho.Draw(shader);
+        //Gary
+        cuerpoGary.Draw(shader);
+        ojoIzquierdo.Draw(shader);
+        ojoDerecho.Draw(shader);
 
         glfwSwapBuffers(window);
     }
