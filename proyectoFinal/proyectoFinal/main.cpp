@@ -5,7 +5,7 @@
 
 // Std. Includes
 #include <string>
-
+#include <cmath>
 // GLEW
 #include <GL/glew.h>
 
@@ -37,7 +37,10 @@ int SCREEN_WIDTH, SCREEN_HEIGHT;
 void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void MouseCallback(GLFWwindow* window, double xPos, double yPos);
 void DoMovement();
-
+void animarPuerta(glm::mat4* model, bool* puerta, float* rotacionPuerta);
+void animar();
+void animarJugueteMedusas(glm::mat4* model, int parte);
+void animarVentana(glm::mat4* model);
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
@@ -53,8 +56,29 @@ float rotar2 = 0.0;
 
 
 //
+const float RANGO_DISTANCIA = 7.0f;
+const float VELOCIDAD = 0.1f;
+// Variables de control de animaciones
+bool abrir_puerta1 = false;
+bool abrir_puerta2 = false;
+bool abrir_puertaCasa = false;
+bool abrir_ventanasCasa = false;
+bool activar_jugueteMedusas = false;
+float rotacionPuerta1 = 0.0f;
+float rotacionPuerta2 = 0.0f;
+float rotacionPuertaCasa = 0.0f;
+float rotacionVentanasCasa = 0.0f;
+float jugueteRotacion1 = 0.0f;
+float jugueteRotacion2 = 0.0f;
+float jugueteRotacion3 = 0.0f;
+int jugueteAnimacionEstado = 0;
+//Prueba
+float rotacionjugueteAnclaje = 0.0f;
+float rotacionJuguete1 = 0.0f;
+float rotacionJuguete2 = 0.0f;
 
-
+// Matriz auxiliar en la rotacion del juguete
+glm::mat4 modelAux = glm::mat4(1.0f);
 int main()
 {
     // Init GLFW
@@ -111,6 +135,8 @@ int main()
     //Habitacion
     Model habitacion((char*)"Models/habitacion/habitacion.obj");
     //juguete de medusas
+    // Model juguete((char*)"Models/jugueteMedusas/juguete.obj");
+        //juguete de medusas
     Model jugueteAnclaje((char*)"Models/jugueteMedusas/jugueteAnclaje.obj");
     Model juguete1((char*)"Models/jugueteMedusas/juguete1.obj");
     Model juguete2((char*)"Models/jugueteMedusas/juguete2.obj");
@@ -173,6 +199,8 @@ int main()
     SkyBox fondo((char*)"Models/SkyBox/right.tga", (char*)"Models/SkyBox/left.tga", (char*)"Models/SkyBox/top.tga",
         (char*)"Models/SkyBox/bottom.tga", (char*)"Models/SkyBox/back.tga", (char*)"Models/SkyBox/front.tga",
         skyboxVertices_1, sizeof(skyboxVertices_1));
+
+
 
     // Draw in wireframe
     //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
@@ -244,12 +272,13 @@ int main()
         //PuertaCuarto1
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(1.7254f, 1.7624f, -6.3046));
+        animarPuerta(&model, &abrir_puerta1, &rotacionPuerta1); 
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         puertaCuarto1.Draw(shader);
         //PuertaCuarto2
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(1.6489f, 1.7615f, 10.9612));
-        //model = glm::rotate(model, glm::radians(rotar1), glm::vec3(0.0f, 1.0f, 0.0));
+        animarPuerta(&model, &abrir_puerta2, &rotacionPuerta2);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         puertaCuarto2.Draw(shader);
         
@@ -261,19 +290,23 @@ int main()
 
         //Juguete de medusas
         model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(1.8922f, 9.4165f, -2.3752f));
+        model = glm::translate(model, glm::vec3(1.8922f, 9.6141f, -2.3854f));
+        animarJugueteMedusas(&model, 1);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         jugueteAnclaje.Draw(shader);
 
-        model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(1.2576f, 6.8221f, -3.1715f));
+        model = glm::mat4(1); 
+        model = glm::translate(model, glm::vec3(1.8944f, 6.9405f, -3.4219f));
+        animarJugueteMedusas(&model, 2);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         juguete1.Draw(shader);
 
         model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(2.4182f, 6.8540f, -1.6971f));
+        model = glm::translate(model, glm::vec3(1.8922f, 6.9466f, -1.3860f));
+        animarJugueteMedusas(&model, 3);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         juguete2.Draw(shader);
+
 
 
         //Bob Esponja
@@ -405,25 +438,28 @@ int main()
 
         //Puerta casa
         model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(-4.6333f, 6.4050f, 18.0085f));
+        model = glm::translate(model, glm::vec3(-4.6333, 0.0000, 18.0085));
+        animarPuerta(&model, &abrir_puertaCasa, &rotacionPuertaCasa);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         puertaCasa.Draw(shader);
 
-        //Ventanas casa
+        //Ventana casa 1
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(-8.6756f, 19.9024f, 15.4704f));
+        animarVentana(&model);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         ventanaCasa1.Draw(shader);
-
+        //Ventana casa 2
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(8.4491f, 9.6981f, 14.8688f));
+        animarVentana(&model);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         ventanaCasa2.Draw(shader);
 
         // Flores 
         // No necesitan posicionarse ya que su pivote ya se encuentra en donde lo queremos (el origen), para
         // que las flores se muevan alrededor de la casa cuando cambie la luz ambiental 
-
+        model = glm::mat4(1);
         flor1.Draw(shader);
 
         flor2.Draw(shader);
@@ -442,6 +478,9 @@ int main()
 // Moves/alters the camera positions based on user input
 void DoMovement()
 {
+
+    
+
     // Camera controls
     if (keys[GLFW_KEY_W] || keys[GLFW_KEY_UP])
     {
@@ -463,15 +502,7 @@ void DoMovement()
         camera.ProcessKeyboard(RIGHT, deltaTime);
     }
 
-    if (keys[GLFW_KEY_U])
-    {
-        rotar1 += 0.1;
-    }
 
-    if (keys[GLFW_KEY_I])
-    {
-        rotar1 -= 0.1;
-    }
 }
 
 // Is called whenever a key is pressed/released via GLFW
@@ -494,6 +525,18 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
         }
     }
 
+    if (keys[GLFW_KEY_E])
+    {
+
+        std::cout << "Distancia = " <<glm::distance(camera.GetPosition(), glm::vec3(-4.6333f, 6.4050f, 18.0085f)) << endl;
+        animar();
+    }
+    if (keys[GLFW_KEY_V])
+    {
+        abrir_ventanasCasa = !abrir_ventanasCasa;
+    }
+
+
 }
 
 void MouseCallback(GLFWwindow* window, double xPos, double yPos)
@@ -512,5 +555,86 @@ void MouseCallback(GLFWwindow* window, double xPos, double yPos)
     lastY = yPos;
 
     camera.ProcessMouseMovement(xOffset, yOffset);
+}
+
+
+void animarPuerta(glm::mat4* model, bool* puerta, float* rotacionPuerta) {
+    if (*puerta) {
+        if (*rotacionPuerta > -90.0f) {
+            *rotacionPuerta -= 10 * VELOCIDAD;
+        }
+    }
+    else if (*rotacionPuerta < 0) {
+        *rotacionPuerta += 10 * VELOCIDAD;
+    }
+    *model = glm::rotate(*model, glm::radians(*rotacionPuerta), glm::vec3(0.0f, 1.0f, 0.0f));
+} 
+
+void animarVentana(glm::mat4* model) {
+    if (abrir_ventanasCasa) {
+            if (rotacionVentanasCasa > -100.0f) {
+                rotacionVentanasCasa -= 10 * VELOCIDAD;
+            }
+        }
+    else if (rotacionVentanasCasa < 0) {
+            rotacionVentanasCasa += 10 * VELOCIDAD;
+    }
+    *model = glm::rotate(*model, glm::radians(rotacionVentanasCasa), glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+
+void animarJugueteMedusas(glm::mat4* model, int parte) {
+    float posX, posZ;
+    if (activar_jugueteMedusas) {
+        switch (parte) {
+        case 1:
+            rotacionjugueteAnclaje += 1.0 * VELOCIDAD;
+            // Rotacion del anclaje del juguete
+            *model = glm::rotate(*model, glm::radians(rotacionjugueteAnclaje), glm::vec3(0.0f, 1.0f, 0.0f));
+            break;
+        case 2:
+            rotacionJuguete1 -= 2.0 * VELOCIDAD;
+            // Calculo de la la traslacion en base a la rotacion del anclaje
+            posX = cos(glm::radians(-rotacionjugueteAnclaje)) * (1.8944f - 1.8922f) - sin(glm::radians(-rotacionjugueteAnclaje)) * (-3.4219f + 2.3854f) + 1.8922f; //+1.8922f;
+            posZ = sin(glm::radians(-rotacionjugueteAnclaje)) * (1.8944f - 1.8922f) + cos(glm::radians(-rotacionjugueteAnclaje)) * (-3.4219f + 2.3854f) - 2.3854f;// -2.3752f;
+            *model = glm::translate(glm::mat4(1.0f), glm::vec3(posX, 6.9405f, posZ));
+            // Rotacion de los juguetes
+            *model = glm::rotate(*model, glm::radians(rotacionJuguete1), glm::vec3(0.0f, 1.0f, 0.0f));        
+            break;
+        case 3:
+            rotacionJuguete2 -= 2.0 * VELOCIDAD;
+            // Calculo de la la traslacion en base a la rotacion del anclaje
+            posX = cos(glm::radians(-rotacionjugueteAnclaje)) * (1.8922f - 1.8922f) - sin(glm::radians(-rotacionjugueteAnclaje)) * (-1.3860f + 2.3854f) + 1.8922f; //+1.8922f;
+            posZ = sin(glm::radians(-rotacionjugueteAnclaje)) * (1.8922f - 1.8922f) + cos(glm::radians(-rotacionjugueteAnclaje)) * (-1.3860f + 2.3854f) - 2.3854f;// -2.3752f;
+            *model = glm::translate(glm::mat4(1.0f), glm::vec3(posX, 6.9466f, posZ));
+            // Rotacion de los juguetes
+            *model = glm::rotate(*model, glm::radians(rotacionJuguete2), glm::vec3(0.0f, 1.0f, 0.0f));
+            break;
+        default:
+            break;
+        }
+    }
+
+}
+
+
+// Activa la animacion correspondiente de acuerdo a la distancia de la posicion de la camara
+void animar() {
+    // Puerta cuarto 1
+    if (glm::distance(camera.GetPosition(), glm::vec3(1.7254f, 1.7624f, -6.3046)) <= RANGO_DISTANCIA) {
+        abrir_puerta1 = !abrir_puerta1;
+    }
+    // Puerta cuarto 2
+    if (glm::distance(camera.GetPosition(), glm::vec3(1.6489f, 1.7615f, 10.9612)) <= RANGO_DISTANCIA) {
+        abrir_puerta2 = !abrir_puerta2;
+    }
+    // Puerta casa
+    if (glm::distance(camera.GetPosition(), glm::vec3(-4.6333, 0.0000, 18.0085)) <= RANGO_DISTANCIA) {
+        abrir_puertaCasa = !abrir_puertaCasa;
+    }
+    // Juguete de medusas
+    if (glm::distance(camera.GetPosition(), glm::vec3(1.8922f, 9.4165f, -2.3752f)) <= RANGO_DISTANCIA) {
+        activar_jugueteMedusas = !activar_jugueteMedusas;
+    }
 }
 
