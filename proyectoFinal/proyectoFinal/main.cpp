@@ -6,6 +6,7 @@
 // Std. Includes
 #include <string>
 #include <cmath>
+#include <random>
 // GLEW
 #include <GL/glew.h>
 
@@ -41,6 +42,8 @@ void animarPuerta(glm::mat4* model, bool* puerta, float* rotacionPuerta);
 void animar();
 void animarJugueteMedusas(glm::mat4* model, int parte);
 void animarVentana(glm::mat4* model);
+void animarReloj(glm::mat4* model);
+void animarBurbujaReloj(glm::mat4* model, int burbuja);
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
@@ -64,6 +67,8 @@ bool abrir_puerta2 = false;
 bool abrir_puertaCasa = false;
 bool abrir_ventanasCasa = false;
 bool activar_jugueteMedusas = false;
+bool activar_relojAlarma = false;
+bool activar_burbujasAlarma = false;
 float rotacionPuerta1 = 0.0f;
 float rotacionPuerta2 = 0.0f;
 float rotacionPuertaCasa = 0.0f;
@@ -71,16 +76,44 @@ float rotacionVentanasCasa = 0.0f;
 float jugueteRotacion1 = 0.0f;
 float jugueteRotacion2 = 0.0f;
 float jugueteRotacion3 = 0.0f;
-int jugueteAnimacionEstado = 0;
+float relojRotacion = 0.0f;
+float relojTraslacion = 0.0f;
+float burbujasRelojContador = 0.0f;
+int relojAnimacionEstado = 1;
 //Prueba
 float rotacionjugueteAnclaje = 0.0f;
 float rotacionJuguete1 = 0.0f;
 float rotacionJuguete2 = 0.0f;
+//cambio prueba
+////////////
+glm::vec3 burbujasRelojPosiciones[] = {
+    glm::vec3(-2.6370f,  2.3964f,  -1.2950f),
+    glm::vec3(-2.6370f,  3.1390f,  -1.2950f),
+    glm::vec3(-2.6370f,  3.8972f,  -1.2950f),
+    glm::vec3(-2.6370f,  4.5717f,  -1.2950f),
+    glm::vec3(-1.8141f,  2.3964f,  -1.5846f),
+    glm::vec3(-2.3112f,  3.1390f,  -1.5846f),
+    glm::vec3(-2.6370f,  3.8972f,  -1.5846f),
+    glm::vec3(-2.6370f,  4.5717f,  -1.5846f),
+    glm::vec3(-2.3112f,  4.2426f,  -1.7423f),
+    glm::vec3(-2.6370f,  2.3964f,  -1.5846f),
+    glm::vec3(-1.8141f,  3.1390f,  -2.0904f),
+    glm::vec3(-1.8141f,  3.8972f,  -2.0904f),
+    glm::vec3(-2.6370f,  4.5717f,  -2.0904f),
+    glm::vec3(-2.3112f,  4.2426f,  -2.0904f)
+};
+
+float burbujasRelojTraslacion[]{
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+};
+
+
 
 // Matriz auxiliar en la rotacion del juguete
 glm::mat4 modelAux = glm::mat4(1.0f);
 int main()
 {
+    std::srand(glfwGetTime()); //Se inicialza generador random de numeros
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
@@ -153,6 +186,8 @@ int main()
     Model puertaCuarto1((char*)"Models/puertas/puertaCuarto1.obj");
     Model marcoPuertaCuarto2((char*)"Models/puertas/marcoPuertaCuarto2.obj");
     Model puertaCuarto2((char*)"Models/puertas/puertaCuarto2.obj");
+    //Burbuja de la alarma
+    Model burbujaAlarma((char*)"Models/burbujas/burbujaAlarma.obj"); 
     //Fachada
     //
     Model casa((char*)"Models/casa/casaFachada.obj");
@@ -285,9 +320,19 @@ int main()
         //Reloj
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(-5.4632f, 1.6206f, -1.7841));
+        animarReloj(&model);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         reloj.Draw(shader);
-
+        //Burbujas del reloj
+        if (activar_burbujasAlarma) {
+            for (int burbuja = 0; burbuja < 14; burbuja++) {
+                model = glm::mat4(1);
+                model = glm::translate(model, burbujasRelojPosiciones[burbuja]);
+                animarBurbujaReloj(&model, burbuja);
+                glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+                burbujaAlarma.Draw(shader);
+            }
+        }
         //Juguete de medusas
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(1.8922f, 9.6141f, -2.3854f));
@@ -460,6 +505,7 @@ int main()
         // No necesitan posicionarse ya que su pivote ya se encuentra en donde lo queremos (el origen), para
         // que las flores se muevan alrededor de la casa cuando cambie la luz ambiental 
         model = glm::mat4(1);
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         flor1.Draw(shader);
 
         flor2.Draw(shader);
@@ -534,6 +580,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
     if (keys[GLFW_KEY_V])
     {
         abrir_ventanasCasa = !abrir_ventanasCasa;
+        activar_relojAlarma = !activar_relojAlarma;
     }
 
 
@@ -613,6 +660,122 @@ void animarJugueteMedusas(glm::mat4* model, int parte) {
         default:
             break;
         }
+    }
+
+}
+
+
+void animarReloj(glm::mat4* model) {
+    if (activar_relojAlarma) {
+        switch (relojAnimacionEstado){
+        case 1:
+            if (relojTraslacion >= 1.0f) {
+                relojAnimacionEstado = 2;
+            }
+            relojTraslacion += 0.1 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            break;
+        case 2:
+            if (relojTraslacion <= 0.0f) {
+                relojAnimacionEstado = 3;
+            }
+            relojTraslacion -= 0.1 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            break;
+        case 3:
+            if (relojTraslacion >= 1.0f and relojRotacion <= -45.0f) {
+                relojAnimacionEstado = 4;
+            }
+            relojTraslacion += 0.1 * VELOCIDAD;
+            relojRotacion -= 4.5 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(1.0f, 0.0f, 0.0f));
+            break;
+        case 4:
+            if (relojTraslacion <= 0.0f and relojRotacion >= 0) {
+                relojAnimacionEstado = 5;
+            }
+            relojTraslacion -= 0.1 * VELOCIDAD;
+            relojRotacion += 4.5 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(1.0f, 0.0f, 0.0f));
+            break;
+        case 5:
+            if (relojTraslacion >= 1.0f and relojRotacion >= 45.0f) {
+                relojAnimacionEstado = 6;
+            }
+            relojTraslacion += 0.1 * VELOCIDAD;
+            relojRotacion += 4.5 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(1.0f, 0.0f, 0.0f));
+            break;
+        case 6:
+            if (relojTraslacion <= 0.0f and relojRotacion <= 0.0f) {
+                relojAnimacionEstado = 7;
+            }
+            relojTraslacion -= 0.1 * VELOCIDAD;
+            relojRotacion -= 4.5 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(1.0f, 0.0f, 0.0f));
+            break;
+        case 7:
+            if (relojTraslacion >= 1.0f and relojRotacion >= 45.0f) {
+                relojAnimacionEstado = 8;
+            }
+            relojTraslacion += 0.1 * VELOCIDAD;
+            relojRotacion += 4.5 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(0.0f, 0.0f, 1.0f));
+            break;
+        case 8:// TERMINIA Y EMPIZA BURBUJAS Y SONIDO FUERTE
+            if (relojRotacion <= -45.0f) {
+                relojAnimacionEstado = 9;
+            }
+            relojRotacion -= 4.5 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(0.0f, 0.0f, 1.0f));
+            activar_burbujasAlarma = true;
+            break;
+        case 9:// Empiezan burbujas
+            if (burbujasRelojContador >= 2  ) {
+                relojAnimacionEstado = 10;
+                burbujasRelojContador = 0;
+                activar_burbujasAlarma = false;
+            }
+
+            burbujasRelojContador += 0.1 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(0.0f, 0.0f, 1.0f));
+            break;
+        case 10:
+            if (relojTraslacion <= 0.0f and relojRotacion >= 0.0f) {
+                relojAnimacionEstado = 1;
+                activar_relojAlarma = !activar_relojAlarma;
+            }
+            relojTraslacion -= 0.1 * VELOCIDAD;
+            relojRotacion += 4.5 * VELOCIDAD;
+            *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
+            *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(0.0f, 0.0f, 1.0f));
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void animarBurbujaReloj(glm::mat4* model, int burbuja) {
+    
+    float randomNumero = (float)std::rand() / (float)(RAND_MAX+1);
+    if (activar_burbujasAlarma && burbujasRelojContador <= 2) {
+        if (burbujasRelojTraslacion[burbuja] <= 10) {
+            burbujasRelojTraslacion[burbuja] += 0.1 * randomNumero;
+            *model = glm::translate(*model, glm::vec3(burbujasRelojTraslacion[burbuja], 0, 0));
+            // std::cout << "tralacion = " << ((double)std::rand() / (RAND_MAX)) + 1 << endl;
+        }
+        //Reinicia la traslacion de la burbuja
+        else {
+            burbujasRelojTraslacion[burbuja] = 0.0;
+        }       
     }
 
 }
