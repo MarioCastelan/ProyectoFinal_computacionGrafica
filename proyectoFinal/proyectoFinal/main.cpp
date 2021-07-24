@@ -44,6 +44,8 @@ void animarJugueteMedusas(glm::mat4* model, int parte);
 void animarVentana(glm::mat4* model);
 void animarReloj(glm::mat4* model);
 void animarBurbujaReloj(glm::mat4* model, int burbuja);
+void animarBurbujaChimenea(glm::mat4* model, int burbuja);
+void animarMedusa(glm::mat4* model, float* traslacionMedusa, float* rotacionPataMedusa, int parte, bool* estadoPataMedusa);
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
@@ -69,6 +71,12 @@ bool abrir_ventanasCasa = false;
 bool activar_jugueteMedusas = false;
 bool activar_relojAlarma = false;
 bool activar_burbujasAlarma = false;
+bool activar_burbujasChimenea = false;
+bool activar_medusas = false;
+bool estadoPataMedusa1 = false;
+bool estadoPataMedusa2 = false;
+float rotacionPatasMedusa1 = 0.0f;
+float rotacionPatasMedusa2 = 0.0f;
 float rotacionPuerta1 = 0.0f;
 float rotacionPuerta2 = 0.0f;
 float rotacionPuertaCasa = 0.0f;
@@ -78,14 +86,15 @@ float jugueteRotacion2 = 0.0f;
 float jugueteRotacion3 = 0.0f;
 float relojRotacion = 0.0f;
 float relojTraslacion = 0.0f;
+float traslacionMedusa1 = 0.0f;
+float traslacionMedusa2 = 0.0f;
 float burbujasRelojContador = 0.0f;
 int relojAnimacionEstado = 1;
 //Prueba
 float rotacionjugueteAnclaje = 0.0f;
 float rotacionJuguete1 = 0.0f;
 float rotacionJuguete2 = 0.0f;
-//cambio prueba
-////////////
+//Posiciones de burbujas del reloj
 glm::vec3 burbujasRelojPosiciones[] = {
     glm::vec3(-2.6370f,  2.3964f,  -1.2950f),
     glm::vec3(-2.6370f,  3.1390f,  -1.2950f),
@@ -103,8 +112,21 @@ glm::vec3 burbujasRelojPosiciones[] = {
     glm::vec3(-2.3112f,  4.2426f,  -2.0904f)
 };
 
-float burbujasRelojTraslacion[]{
+float burbujasRelojTraslacion[] = {
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+};
+
+//Posiciones de burbujas de chimenea
+glm::vec3 burbujasChimeneaPosiciones[] = {
+    glm::vec3(17.1803f, 37.9356f, 11.6796f),
+    glm::vec3(23.5857f, 38.1910f, 2.1946f),
+    glm::vec3(19.7220f, 42.6049f, 11.0467f),
+    glm::vec3(25.1314f, 48.2882f, -0.3447f),
+    glm::vec3(22.2975f, 55.0345f, 2.0671f)
+};
+
+float burbujasChimeneaTraslacion[] = {
+    0.0, 0.0, 0.0, 0.0, 0.0
 };
 
 
@@ -209,11 +231,7 @@ int main()
     Model flor3((char*)"Models/flores/flor3.obj");
     Model flor4((char*)"Models/flores/flor4.obj");
     //Burbujas
-    Model burbuja1((char*)"Models/burbujas/burbuja.obj");
-    Model burbuja2((char*)"Models/burbujas/burbuja.obj");
-    Model burbuja3((char*)"Models/burbujas/burbuja.obj");
-    Model burbuja4((char*)"Models/burbujas/burbuja.obj");
-    Model burbuja5((char*)"Models/burbujas/burbuja.obj");
+    Model burbujaChimenea((char*)"Models/burbujas/burbuja.obj");
 
     Model puertaCasa((char*)"Models/puertas/puertaCasa.obj"); //El marco de la puerta ya se encuentra en el modelo de la casa
     //Ventanas de la casa, Los marcos de las ventanas ya se encuentran en el modelo de la casa
@@ -240,7 +258,7 @@ int main()
     // Draw in wireframe
     //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
-    glm::mat4 projection = glm::perspective(camera.GetZoom(), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(camera.GetZoom(), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 200.0f);
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -407,79 +425,73 @@ int main()
         //Medusa1
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(16.2221f, 12.5750f, 33.5387f));
+        animarMedusa(&model, &traslacionMedusa1, &rotacionPatasMedusa1, 1, &estadoPataMedusa1);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         medusa1.Draw(shader);
 
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(15.8847, 11.2060f, 33.3054f));
+        animarMedusa(&model, &traslacionMedusa1, &rotacionPatasMedusa1, 3, &estadoPataMedusa1);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pata1_1.Draw(shader);
 
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(15.8699f, 11.1621f, 34.3139f));
+        animarMedusa(&model, &traslacionMedusa1, &rotacionPatasMedusa1, 3, &estadoPataMedusa1);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pata1_2.Draw(shader);
 
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(16.5612f, 11.1536f, 34.1109f));
+        animarMedusa(&model, &traslacionMedusa1, &rotacionPatasMedusa1, 2, &estadoPataMedusa1);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pata1_3.Draw(shader);
 
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(16.7413f, 11.2340f, 33.2980f));
+        animarMedusa(&model, &traslacionMedusa1, &rotacionPatasMedusa1, 2, &estadoPataMedusa1);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pata1_4.Draw(shader);
         //Medusa2
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(21.3627f, 18.4902f, 35.5109f));
+        animarMedusa(&model, &traslacionMedusa2, &rotacionPatasMedusa2, 1, &estadoPataMedusa2);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         medusa2.Draw(shader);
 
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(20.8863f, 17.1430f, 35.4862f));
+        animarMedusa(&model, &traslacionMedusa2, &rotacionPatasMedusa2, 3, &estadoPataMedusa2);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pata2_1.Draw(shader);
 
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(21.3452f, 17.0906f, 36.3839f));
+        animarMedusa(&model, &traslacionMedusa2, &rotacionPatasMedusa2, 3, &estadoPataMedusa2);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pata2_2.Draw(shader);
 
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(21.8585f, 17.0477f, 35.8799f));
+        animarMedusa(&model, &traslacionMedusa2, &rotacionPatasMedusa2, 2, &estadoPataMedusa2);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pata2_3.Draw(shader);
 
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(21.6391f, 17.1261f, 35.0766f));
+        animarMedusa(&model, &traslacionMedusa2, &rotacionPatasMedusa2, 2, &estadoPataMedusa2);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pata2_4.Draw(shader);
         
-        //Bubujas
-        model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(17.1803f, 37.9356f, 11.6796f));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        burbuja1.Draw(shader);
-
-        model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(23.5857f, 38.1910f, 2.1946f));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        burbuja2.Draw(shader);
-
-        model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(19.7220f, 42.6049f, 11.0467f));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        burbuja3.Draw(shader);
-
-        model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(25.1314f, 48.2882f, -0.3447f));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        burbuja4.Draw(shader);
-
-        model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(22.2975f, 55.0345f, 2.0671f));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        burbuja5.Draw(shader);
+        //Bubujas chimenea
+        for (int burbuja = 0; burbuja < 5; burbuja++) {
+            model = glm::mat4(1);
+            model = glm::translate(model, burbujasChimeneaPosiciones[burbuja]);
+            animarBurbujaChimenea(&model, burbuja);
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            burbujaChimenea.Draw(shader);
+        }
+        
 
         //Puerta casa
         model = glm::mat4(1);
@@ -581,8 +593,14 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
     {
         abrir_ventanasCasa = !abrir_ventanasCasa;
         activar_relojAlarma = !activar_relojAlarma;
-    }
 
+    }
+    if (keys[GLFW_KEY_B]) {
+        activar_burbujasChimenea = !activar_burbujasChimenea;
+    }
+    if (keys[GLFW_KEY_M]) {
+        activar_medusas = !activar_medusas;
+    }
 
 }
 
@@ -777,9 +795,63 @@ void animarBurbujaReloj(glm::mat4* model, int burbuja) {
             burbujasRelojTraslacion[burbuja] = 0.0;
         }       
     }
-
 }
 
+void animarBurbujaChimenea(glm::mat4* model, int burbuja) {
+
+    
+    if (activar_burbujasChimenea) {
+        float randomNumero = (float)std::rand() / (float)(RAND_MAX + 1);
+        if (burbujasChimeneaTraslacion[burbuja] <= 10) {
+            burbujasChimeneaTraslacion[burbuja] += 0.1 * randomNumero;
+            *model = glm::translate(*model, glm::vec3(0, burbujasChimeneaTraslacion[burbuja], 0));
+        }
+        //Reinicia la traslacion de la burbuja
+        else {
+            burbujasChimeneaTraslacion[burbuja] = 0.0;
+        }
+    }
+}
+
+
+
+void animarMedusa(glm::mat4* model, float* traslacionMedusa, float* rotacionPataMedusa, int parte, bool* estadoPataMedusa) {
+    if (activar_medusas) {
+        switch (parte){
+        case 1:
+            if (*traslacionMedusa >= 50) {
+                *traslacionMedusa = 0.0f;
+            }
+            else {
+                *traslacionMedusa += 0.1 * VELOCIDAD;
+            }
+            if (*rotacionPataMedusa >= 70.0) {
+                *estadoPataMedusa = true;
+            }
+            else if (*rotacionPataMedusa <= -20.0) {
+                *estadoPataMedusa = false;
+            }
+            if (*estadoPataMedusa) {
+                *rotacionPataMedusa -= 3 * VELOCIDAD;
+            }
+            else {
+                *rotacionPataMedusa += 3 * VELOCIDAD;
+                
+            }
+            *model = glm::translate(*model, glm::vec3(*traslacionMedusa, *traslacionMedusa, 0));
+            break;
+        case 2:
+            *model = glm::translate(*model, glm::vec3(*traslacionMedusa, *traslacionMedusa, 0));
+            *model = glm::rotate(*model, glm::radians(*rotacionPataMedusa), glm::vec3(0.0f, 0.0f, 1.0f));
+            break;
+        case 3:
+            *model = glm::translate(*model, glm::vec3(*traslacionMedusa, *traslacionMedusa, 0));
+            *model = glm::rotate(*model, glm::radians(-*rotacionPataMedusa), glm::vec3(0.0f, 0.0f, 1.0f));
+        default:
+            break;
+        }
+    }
+}
 
 // Activa la animacion correspondiente de acuerdo a la distancia de la posicion de la camara
 void animar() {
