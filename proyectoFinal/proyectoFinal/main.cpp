@@ -46,6 +46,10 @@ void animarReloj(glm::mat4* model);
 void animarBurbujaReloj(glm::mat4* model, int burbuja);
 void animarBurbujaChimenea(glm::mat4* model, int burbuja);
 void animarMedusa(glm::mat4* model, float* traslacionMedusa, float* rotacionPataMedusa, int parte, bool* estadoPataMedusa);
+void keyFrameAnimacion();
+void resetElements(void);
+void interpolation(void);
+void animarPelota(glm::mat4* model);
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
@@ -63,6 +67,8 @@ float rotar2 = 0.0;
 //
 const float RANGO_DISTANCIA = 7.0f;
 const float VELOCIDAD = 0.1f;
+const int FRAMES_BOBESPONJA = 19;
+const int FRAMES_GARY = 98;
 // Variables de control de animaciones
 bool abrir_puerta1 = false;
 bool abrir_puerta2 = false;
@@ -73,8 +79,10 @@ bool activar_relojAlarma = false;
 bool activar_burbujasAlarma = false;
 bool activar_burbujasChimenea = false;
 bool activar_medusas = false;
+bool activar_pelota = false;
 bool estadoPataMedusa1 = false;
 bool estadoPataMedusa2 = false;
+bool rebotePelota = false;
 float rotacionPatasMedusa1 = 0.0f;
 float rotacionPatasMedusa2 = 0.0f;
 float rotacionPuerta1 = 0.0f;
@@ -90,10 +98,14 @@ float traslacionMedusa1 = 0.0f;
 float traslacionMedusa2 = 0.0f;
 float burbujasRelojContador = 0.0f;
 int relojAnimacionEstado = 1;
-//Prueba
+
 float rotacionjugueteAnclaje = 0.0f;
 float rotacionJuguete1 = 0.0f;
 float rotacionJuguete2 = 0.0f;
+float posicionPelota = 0.0f;
+float rotacionPelota = 0.0f;
+
+
 //Posiciones de burbujas del reloj
 glm::vec3 burbujasRelojPosiciones[] = {
     glm::vec3(-2.6370f,  2.3964f,  -1.2950f),
@@ -129,7 +141,78 @@ float burbujasChimeneaTraslacion[] = {
     0.0, 0.0, 0.0, 0.0, 0.0
 };
 
+// Variables y estructura para animacion de keyframes 
+float   posZ = 0,
+        rotCuerpo = 0,
+        rotCuerpoY = 0,
+        rotPieIzq = 0,
+        rotPieDer = 0,
+        rotBraIzq = 0,
+        rotBraDer = 0,
+        garyPosX = 0,
+        garyPosY = 0,
+        garyPosZ = 0,
+        garyRotY = 0,
+        garyRotX = 0,
+        garyOjoIzq = 0,
+        garyOjoDer = 0;
 
+int i_max_steps = 100;
+int i_curr_steps = 0;
+int i_curr_steps_gary = 0;
+
+
+typedef struct _frame
+{
+    float posZ;		
+    float incZ;		
+    float rotCuerpo;
+    float rotIncCuerpo;
+    float garyPosX;
+    float garyPosY;
+    float garyPosZ;
+    float garyPosXInc;
+    float garyPosYInc;
+    float garyPosZInc;
+    float garyRotY;
+    float garyRotYInc;
+    float garyRotX;
+    float garyRotXInc;
+    float garyOjoIzq;
+    float garyOjoIzqInc;
+    float garyOjoDer;
+    float garyOjoDerInc;
+    float rotPieIzq;
+    float rotPieIzqInc;
+    float rotPieDer;
+    float rotPieDerInc;
+    float rotBraIzq;
+    float rotBraIzqInc;
+    float rotBraDer;
+    float rotBraDerInc;
+    _frame(float _cuerpoRot, float _brazoIzqRot, float _brazoDerRot, float _pieIzqRot, float _pieDerRot, float _cuerpoTra, float _garyPosX, float _garyPosY, float _garyPosZ, float _garyRotY, float _garyRotX, float _garyOjoIzq, float _garyOjoDer) {
+        posZ = _cuerpoTra;
+        rotBraIzq = _brazoIzqRot;
+        rotBraDer = _brazoDerRot;
+        rotPieIzq = _pieIzqRot;
+        rotPieDer = _pieDerRot;
+        rotCuerpo = _cuerpoRot;
+        garyPosX = _garyPosX;
+        garyPosY = _garyPosY;
+        garyPosZ = _garyPosZ;
+        garyRotY = _garyRotY;
+        garyRotX = _garyRotX;
+        garyOjoIzq = _garyOjoIzq;
+        garyOjoDer = _garyOjoDer;
+    }
+
+}FRAME;
+
+vector<FRAME> KeyFrame = vector<FRAME>();
+int FrameIndex = 0;			
+bool playAnimacionKeyFrames = false;
+int playIndex = 0;
+int maxFrames = 0;
 
 // Matriz auxiliar en la rotacion del juguete
 glm::mat4 modelAux = glm::mat4(1.0f);
@@ -260,6 +343,129 @@ int main()
 
     glm::mat4 projection = glm::perspective(camera.GetZoom(), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 200.0f);
 
+    /*_______________________________Carga de datos para las animaciones con keyframes_______________________________*/
+    //Bob Esponja
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 55, -110, 0, -55, 0, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, -110, 55, -55, 110, 0.5, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 55, -110, 110, -55, 1, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, -110, 55, -55, 110, 1.5, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 55, -110, 110, -55, 2, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, -110, 0, -55, 110, 2.5, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 55, -110, 110, -55, 3, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, -110, 55, -55, 110, 3.5, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 55, -110, 110, -55, 4, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, -110, 55, -55, 110, 4.5, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 55, -110, 110, -55, 5, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, -110, 0, -55, 110, 5.5, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(20, -125.298, 80.7993, 0, 79.6991, 6, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(-20, 43.1002, -138.999, 6.80024, -32.4003, 6, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(-20, 43.1002, -138.999, 6.80024, -32.4003, 6, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(-20, 43.1002, -138.999, 6.80024, -32.4003, 6, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0));
+
+    //Gary
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 1.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 2.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 3.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 4.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 5.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 6.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 7.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 8.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 9.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 9.5, 0, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 9.5, 45, 0, 0, 0));// rota a izquierda
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0, 0, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 0.5, 0, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1, 0, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 0, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 0.5, 9.5, 90, 90, 0, 0)); //rota hacia arrbia
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 1, 9.5, 90, 90, 0, 0)); //
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 1.136, 9.5, 90, 90, 0, 0));//
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 1.5, 9.5, 90, 90, 0, 0)); //regresa a normal la rotacion anterior, plano
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 2, 9.5, 90, 90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 3, 9.5, 90, 90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 3.5, 9.5, 90, 90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 1.5, 3.5, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 2, 3.5, 9.5, 90, 0, 0, 0)); //
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 2.5, 3.5, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 3, 3.5, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 3.5, 3.5, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4, 3.5, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.2, 3.5, 9.5, 90, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.2, 2.5, 9.5, 90, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.2, 2, 9.5, 90, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.2, 1.5, 9.5, 90, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.2, 1, 9.5, 90, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.2, 0.5, 9.5, 90, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.2, 0, 9.5, 90, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5, 0, 9.5, 90, 0, 0, 0)); //
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.5, 0, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 9.5, 90, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 9.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 9.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 9, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 8.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 8, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 7.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 7, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 6.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 6, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 5.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 4.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 4, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 3.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 3, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 2.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 2, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 1.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 1, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 0.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, 0, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -0.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -1, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -1.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -2, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -2.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -3, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -3.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -4, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -4.5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 6, 0, -5, 180, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.5, 0, -5, 270, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.3, 0, -5, 270, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.3, 0.5, -5, 270, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.3, 1, -5, 270, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.3, 1.5, -5, 270, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.3, 2, -5, 270, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.3, 2.171, -5, 270, -90, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5.3, 2.171, -5, 270, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 5, 2.171, -5, 270, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -5, 270, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -5, 360, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -4.5, 360, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -4.5, 360, 0, 10, -10));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -4.5, 360, 0, 10, -10));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -4.5, 360, 0, 0, 0));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -4.5, 360, 0, 10, -10));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -4.5, 360, 0, 10, -10));
+    KeyFrame.push_back(FRAME(0, 0, 0, 0, 0, 0, 4.5, 2.171, -4.5, 360, 0, 0, 0));
+    /*_______________________________________________________________________________________________________________*/
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -271,7 +477,7 @@ int main()
         // Check and call events
         glfwPollEvents();
         DoMovement();
-
+        keyFrameAnimacion();
         // Clear the colorbuffer
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -375,49 +581,77 @@ int main()
         //Bob Esponja
         model = glm::mat4(1);
         model = glm::translate(model, glm::vec3(2.4835f, 1.1726f, -3.6138f));
+        model = glm::translate(model, glm::vec3(0, 0, posZ));
+        model = glm::rotate(model, glm::radians(rotCuerpo), glm::vec3(1.0f, 0.0f, 0.0));
+        model = glm::rotate(model, glm::radians(rotCuerpoY), glm::vec3(0.0f, 1.0f, 0.0));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         cuerpoEsponja.Draw(shader);
 
         model = glm::mat4(1);
+        model = glm::rotate(model, glm::radians(rotCuerpoY), glm::vec3(0.0f, 1.0f, 0.0));
         model = glm::translate(model, glm::vec3(3.0852f, 1.4154f, -3.6936f));
-        model = glm::rotate(model, glm::radians(rotar1), glm::vec3(1.0f, 0.0f, 0.0));
+        model = glm::translate(model, glm::vec3(0, 0, posZ));
+        //model = glm::rotate(model, glm::radians(rotCuerpo), glm::vec3(1.0f, 0.0f, 0.0));
+        model = glm::rotate(model, glm::radians(rotBraIzq), glm::vec3(1.0f, 0.0f, 0.0));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         brazoIzquierdo.Draw(shader);
 
         model = glm::mat4(1);
+        model = glm::rotate(model, glm::radians(rotCuerpoY), glm::vec3(0.0f, 1.0f, 0.0));
         model = glm::translate(model, glm::vec3(1.8817f, 1.4106f, -3.6926f));
+        model = glm::translate(model, glm::vec3(0, 0, posZ));
+        //model = glm::rotate(model, glm::radians(rotCuerpo), glm::vec3(1.0f, 0.0f, 0.0));
+        model = glm::rotate(model, glm::radians(rotBraDer), glm::vec3(1.0f, 0.0f, 0.0));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         brazoDerecho.Draw(shader);
 
         model = glm::mat4(1);
+        model = glm::rotate(model, glm::radians(rotCuerpoY), glm::vec3(0.0f, 1.0f, 0.0));
         model = glm::translate(model, glm::vec3(2.7592f, 0.7526f, -3.6952f));
+        model = glm::translate(model, glm::vec3(0, 0, posZ));
+        model = glm::rotate(model, glm::radians(rotPieIzq), glm::vec3(1.0f, 0.0f, 0.0));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pieIzquierdo.Draw(shader);
 
         model = glm::mat4(1);
+        model = glm::rotate(model, glm::radians(rotCuerpoY), glm::vec3(0.0f, 1.0f, 0.0));
         model = glm::translate(model, glm::vec3(2.2086f, 0.7526f, -3.6952f));
+        model = glm::translate(model, glm::vec3(0, 0, posZ));
+        model = glm::rotate(model, glm::radians(rotPieDer), glm::vec3(1.0f, 0.0f, 0.0));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pieDerecho.Draw(shader);
 
         //Pelota
         model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(2.2543f, 0.2781f, -2.8870f));
+        model = glm::translate(model, glm::vec3(2.2543f, 0.2781f, 3.1130f));
+        animarPelota(&model);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         pelota.Draw(shader);
 
         //Gary
         model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(-2.245f, 0.66f, 0.921f));
+        model = glm::translate(model, glm::vec3(-2.1049f, 0.1230f, 1.2290f));
+        model = glm::translate(model, glm::vec3(garyPosX, garyPosY, garyPosZ));
+        model = glm::rotate(model, glm::radians(garyRotX), glm::vec3(0.0f, 0.0f, 1.0));
+        model = glm::rotate(model, glm::radians(garyRotY), glm::vec3(0.0f, 1.0f, 0.0));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        cuerpoGary.Draw(shader); 
+        cuerpoGary.Draw(shader);
 
         model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(-1.861f, 0.168f, 1.267f));
+        model = glm::translate(model, glm::vec3(-2.1049f, 0.1230f, 1.2290f));
+        model = glm::translate(model, glm::vec3(garyPosX, garyPosY, garyPosZ));
+        model = glm::rotate(model, glm::radians(garyRotX), glm::vec3(0.0f, 0.0f, 1.0));
+        model = glm::rotate(model, glm::radians(garyRotY), glm::vec3(0.0f, 1.0f, 0.0));
+        model = glm::rotate(model, glm::radians(garyOjoIzq), glm::vec3(0.0f, 0.0f, 1.0));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         ojoIzquierdo.Draw(shader);
 
         model = glm::mat4(1);
-        model = glm::translate(model, glm::vec3(-1.921f, 0.132f, 1.303f));
+        model = glm::translate(model, glm::vec3(-2.1049f, 0.1230f, 1.2290f));
+        model = glm::translate(model, glm::vec3(garyPosX, garyPosY, garyPosZ));
+        model = glm::rotate(model, glm::radians(garyRotX), glm::vec3(0.0f, 0.0f, 1.0));
+        model = glm::rotate(model, glm::radians(garyRotY), glm::vec3(0.0f, 1.0f, 0.0));
+        model = glm::rotate(model, glm::radians(garyOjoDer), glm::vec3(0.0f, 0.0f, 1.0));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         ojoDerecho.Draw(shader);
 
@@ -601,6 +835,65 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
     if (keys[GLFW_KEY_M]) {
         activar_medusas = !activar_medusas;
     }
+    //if (keys[GLFW_KEY_K])
+    //{
+    //    if (play == false && (KeyFrame.size() > 1))
+    //    {
+
+    //        resetElements();
+    //        //First Interpolation				
+    //        interpolation();
+
+    //        play = true;
+    //        playIndex = 0;
+    //        i_curr_steps_bobEsponja = 0;
+    //    }
+    //    else
+    //    {
+    //        play = false;
+    //    }
+
+    //}
+    if (keys[GLFW_KEY_K])
+    {
+        //Animar Bob Esponja
+        playAnimacionKeyFrames = !playAnimacionKeyFrames;
+        if (playAnimacionKeyFrames) {
+            maxFrames = FRAMES_BOBESPONJA;
+            playIndex = 0;
+            resetElements();
+            //First Interpolation
+            interpolation();
+            i_curr_steps = 0;
+        }
+        else {
+            resetElements();
+        }
+    }
+    if (keys[GLFW_KEY_L])
+    {
+        //Animar Gary
+        playAnimacionKeyFrames = !playAnimacionKeyFrames;
+        if (playAnimacionKeyFrames) {
+            maxFrames = FRAMES_BOBESPONJA + FRAMES_GARY;
+            playIndex = FRAMES_BOBESPONJA;
+            resetElements();
+            //First Interpolation
+            interpolation();
+            i_curr_steps = 0;
+        }
+        else {
+            resetElements();
+        }
+    }
+
+    if (keys[GLFW_KEY_P]) {
+        activar_pelota = !activar_pelota;
+        posicionPelota = 0;
+        rotacionPelota = 0;
+    }
+
+
 
 }
 
@@ -873,3 +1166,123 @@ void animar() {
     }
 }
 
+// Funciones para animaciones con Key frames y animaciones combinadas
+void keyFrameAnimacion()
+{
+
+    //Movimiento del personaje
+
+    if (playAnimacionKeyFrames)
+    {
+        if (i_curr_steps >= i_max_steps) //end of animation between frames?
+        {
+            playIndex++;
+            if (playIndex == 15)
+                activar_pelota = true;
+
+            if (playIndex > maxFrames - 2)	//end of total animation?
+            {
+                printf("termina anim\n");
+                //playIndex = 0;
+                playAnimacionKeyFrames = false;
+            }
+            else //Next frame interpolations
+            {
+                i_curr_steps = 0; //Reset counter
+                                  //Interpolation
+                interpolation();
+            }
+        }
+        else
+        {
+            //Draw animation
+            posZ += KeyFrame[playIndex].incZ;
+            rotCuerpo += KeyFrame[playIndex].rotIncCuerpo;
+            rotPieIzq += KeyFrame[playIndex].rotPieIzqInc;
+            rotPieDer += KeyFrame[playIndex].rotPieDerInc;
+            rotBraIzq += KeyFrame[playIndex].rotBraIzqInc;
+            rotBraDer += KeyFrame[playIndex].rotBraDerInc;
+            garyPosX += KeyFrame[playIndex].garyPosXInc;
+            garyPosY += KeyFrame[playIndex].garyPosYInc;
+            garyPosZ += KeyFrame[playIndex].garyPosZInc;
+            garyRotX += KeyFrame[playIndex].garyRotXInc;
+            garyRotY += KeyFrame[playIndex].garyRotYInc;
+            garyOjoIzq += KeyFrame[playIndex].garyOjoIzqInc;
+            garyOjoDer += KeyFrame[playIndex].garyOjoDerInc;
+            i_curr_steps++;
+        }
+
+    }
+}
+
+void animarPelota(glm::mat4* model) {
+    if (activar_pelota) {
+        if (rebotePelota) {
+            if (posicionPelota <= 3.1130) {
+                //posicionPelota = 0;
+                //rotacionPelota = 0;
+                activar_pelota = false;
+                rebotePelota = false;
+            }
+            else {
+                posicionPelota -= 0.5 * VELOCIDAD;
+                rotacionPelota -= 80 * VELOCIDAD;
+            }
+        }
+        else {
+            if (posicionPelota >= 8) {
+                rebotePelota = true;
+            }
+            else {
+                posicionPelota += 0.3 * VELOCIDAD;
+                rotacionPelota += 80 * VELOCIDAD;
+            }
+        }
+    }
+    *model = glm::translate(*model, glm::vec3(0, 0, posicionPelota));
+    *model = glm::rotate(*model, glm::radians(rotacionPelota), glm::vec3(1.0f, 0.0f, 0.0f));
+}
+
+
+
+
+void resetElements(void)
+{
+    posZ = KeyFrame[0].posZ;
+    rotCuerpo = KeyFrame[0].rotCuerpo;
+    rotPieIzq = KeyFrame[0].rotPieIzq;
+    rotPieDer = KeyFrame[0].rotPieDer;
+    rotBraIzq = KeyFrame[0].rotBraIzq;
+    rotBraDer = KeyFrame[0].rotBraDer;
+    garyPosX = KeyFrame[0].garyPosX;
+    garyPosY = KeyFrame[0].garyPosY;
+    garyPosZ = KeyFrame[0].garyPosZ;
+    garyRotX = KeyFrame[0].garyRotX;
+    garyRotY = KeyFrame[0].garyRotY;
+    garyOjoIzq = KeyFrame[0].garyOjoIzq;
+    garyOjoDer = KeyFrame[0].garyOjoDer;
+}
+
+
+void interpolation(void)
+{
+
+    KeyFrame[playIndex].incZ = (KeyFrame[playIndex + 1].posZ - KeyFrame[playIndex].posZ) / i_max_steps;
+
+    KeyFrame[playIndex].rotPieIzqInc = (KeyFrame[playIndex + 1].rotPieIzq - KeyFrame[playIndex].rotPieIzq) / i_max_steps;
+    KeyFrame[playIndex].rotPieDerInc = (KeyFrame[playIndex + 1].rotPieDer - KeyFrame[playIndex].rotPieDer) / i_max_steps;
+    KeyFrame[playIndex].rotBraIzqInc = (KeyFrame[playIndex + 1].rotBraIzq - KeyFrame[playIndex].rotBraIzq) / i_max_steps;
+    KeyFrame[playIndex].rotBraDerInc = (KeyFrame[playIndex + 1].rotBraDer - KeyFrame[playIndex].rotBraDer) / i_max_steps;
+
+    KeyFrame[playIndex].rotIncCuerpo = (KeyFrame[playIndex + 1].rotCuerpo - KeyFrame[playIndex].rotCuerpo) / i_max_steps;
+    KeyFrame[playIndex].garyPosXInc = (KeyFrame[playIndex + 1].garyPosX - KeyFrame[playIndex].garyPosX) / i_max_steps;
+    KeyFrame[playIndex].garyPosYInc = (KeyFrame[playIndex + 1].garyPosY - KeyFrame[playIndex].garyPosY) / i_max_steps;
+    KeyFrame[playIndex].garyPosZInc = (KeyFrame[playIndex + 1].garyPosZ - KeyFrame[playIndex].garyPosZ) / i_max_steps;
+    KeyFrame[playIndex].garyRotXInc = (KeyFrame[playIndex + 1].garyRotX - KeyFrame[playIndex].garyRotX) / i_max_steps;
+    KeyFrame[playIndex].garyRotYInc = (KeyFrame[playIndex + 1].garyRotY - KeyFrame[playIndex].garyRotY) / i_max_steps;
+
+    KeyFrame[playIndex].garyOjoIzqInc = (KeyFrame[playIndex + 1].garyOjoIzq - KeyFrame[playIndex].garyOjoIzq) / i_max_steps;
+    KeyFrame[playIndex].garyOjoDerInc = (KeyFrame[playIndex + 1].garyOjoDer - KeyFrame[playIndex].garyOjoDer) / i_max_steps;
+
+
+}
