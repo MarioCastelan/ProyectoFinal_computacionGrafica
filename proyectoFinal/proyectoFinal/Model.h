@@ -221,7 +221,6 @@ GLint TextureFromFile(const char *path, string directory)
 
 	unsigned char *image = SOIL_load_image(filename.c_str(), &width, &height, &channel_count, SOIL_LOAD_AUTO);
 
-	printf("count : %d\n", channel_count);
 	if (image) {
 		GLenum format = GL_RGB;
 
