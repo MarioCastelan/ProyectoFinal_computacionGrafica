@@ -1213,7 +1213,7 @@ void animar() {
         abrir_puerta2 = !abrir_puerta2;
     }
     // Puerta casa
-    if (glm::distance(camera.GetPosition(), glm::vec3(-4.6333, 0.0000, 18.0085)) <= RANGO_DISTANCIA) {
+    if (glm::distance(camera.GetPosition(), glm::vec3(-4.6333, 0.0000, 18.0085)) <= RANGO_DISTANCIA + 5) {
         abrir_puertaCasa = !abrir_puertaCasa;
     }
 }
