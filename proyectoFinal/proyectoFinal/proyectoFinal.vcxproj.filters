@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="CastelanHernandezMario_ProyectoFinal_GPO04.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
