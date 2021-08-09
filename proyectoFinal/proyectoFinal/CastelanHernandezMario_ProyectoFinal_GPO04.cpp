@@ -1,7 +1,7 @@
 //Proyecto Final
 //Castelan Hernandez Mario 
 //Grupo:04
-//Laboratorio de computacion grafica e interaccion humano computadora
+//Computacion Grafica e Interaccion Humano-Computadora
 
 // Std. Includes
 #include <string>
@@ -12,6 +12,10 @@
 
 // GLFW
 #include <GLFW/glfw3.h>
+
+// Sonido 
+
+#include <irrKlang.h>
 
 // GL includes
 #include "Shader.h"
@@ -63,7 +67,11 @@ GLfloat lastFrame = 0.0f;
 float rotar1 = 0.0;
 float rotar2 = 0.0;
 
-
+//Motor de sonido
+irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
+irrklang::ISound* sndBubujas; //Variable de control del sonido de las burbujas
+irrklang::ISound* sndJuguete; //Variable de control del sonido del juguete de medusas
+irrklang::ISound* sndSoundTrack; //Variable de control del soundTrack
 //
 const float RANGO_DISTANCIA = 7.0f;
 const float VELOCIDAD = 0.2f;
@@ -105,6 +113,19 @@ float rotacionJuguete2 = 0.0f;
 float posicionPelota = 0.0f;
 float rotacionPelota = 0.0f;
 
+
+//Posiciones camara estatica
+glm::vec3 camarasEstaticas[] = {
+     glm::vec3(3.77304f, 3.34218f, 7.98635f),
+     glm::vec3(-6.32789f, 3.084f, 7.57777f),
+     glm::vec3(-1.0281f, 3.15635f, 9.12915f),
+     glm::vec3(-0.856808f, 2.16123f, 86.2266f)
+};
+
+//camara estatica indice
+int camaraEstaticaIndice = 0;   
+//Bloqueo de camara libre
+bool bloquearCamara = false;
 
 //Posiciones de burbujas del reloj
 glm::vec3 burbujasRelojPosiciones[] = {
@@ -249,7 +270,10 @@ int main()
     glfwMakeContextCurrent(window);
 
     glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-
+    
+    //SoundTrack de espera para la carga de recursos
+    sndSoundTrack = SoundEngine->play2D("audio/SpongebobTomfoolery.mp3", true, false, true);
+    std::cout << "SoundTrack de espera de recursos: tomfoolery-spongebob" << endl;
     // Set the required callback functions
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetCursorPosCallback(window, MouseCallback);
@@ -283,6 +307,8 @@ int main()
     //    
     //Habitacion
     Model habitacion((char*)"Models/habitacion/habitacion.obj");
+    Model cofre((char*)"Models/cofre/cofre.obj");
+    Model arenero((char*)"Models/arenero/arenero.obj");
     //juguete de medusas
     // Model juguete((char*)"Models/jugueteMedusas/juguete.obj");
         //juguete de medusas
@@ -483,6 +509,13 @@ int main()
     /*_______________________________________________________________________________________________________________*/
     std::cout << '\r' << "Recursos Cargados...100%" << endl;
     std::cout << "Se cargaron todos los recursos" << endl;
+    //SoundTrack
+    
+    
+    sndSoundTrack->stop(); //detiene el soundtrack de espera para la carga de recuros
+    sndSoundTrack = 0;
+    //Inicia el soundtrack para el ambiente virtual
+    sndSoundTrack = SoundEngine->play2D("audio/SpongeBobClosingTheme.mp3", true, false, true);
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -590,7 +623,8 @@ int main()
         plato.Draw(lightingShader);
         marcoPuertaCuarto1.Draw(lightingShader);
         marcoPuertaCuarto2.Draw(lightingShader);
-
+        arenero.Draw(lightingShader);
+        cofre.Draw(lightingShader);
         /*_____________________Fachada_____________________*/
         casa.Draw(lightingShader);
 
@@ -820,6 +854,8 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(lightingShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         ventanaCasa2.Draw(lightingShader);
 
+ 
+
         // Flores 
         // No necesitan posicionarse ya que su pivote ya se encuentra en donde lo queremos (el origen), para
         // que las flores se muevan alrededor de la casa cuando cambie la luz ambiental 
@@ -847,22 +883,22 @@ void DoMovement()
 
 
     // Camera controls
-    if (keys[GLFW_KEY_W] || keys[GLFW_KEY_UP])
+    if ((keys[GLFW_KEY_W] || keys[GLFW_KEY_UP]) && !bloquearCamara)
     {
         camera.ProcessKeyboard(FORWARD, deltaTime);
     }
 
-    if (keys[GLFW_KEY_S] || keys[GLFW_KEY_DOWN])
+    if ((keys[GLFW_KEY_S] || keys[GLFW_KEY_DOWN]) && !bloquearCamara)
     {
         camera.ProcessKeyboard(BACKWARD, deltaTime);
     }
 
-    if (keys[GLFW_KEY_A] || keys[GLFW_KEY_LEFT])
+    if ((keys[GLFW_KEY_A] || keys[GLFW_KEY_LEFT]) && !bloquearCamara)
     {
         camera.ProcessKeyboard(LEFT, deltaTime);
     }
 
-    if (keys[GLFW_KEY_D] || keys[GLFW_KEY_RIGHT])
+    if ((keys[GLFW_KEY_D] || keys[GLFW_KEY_RIGHT]) && !bloquearCamara)
     {
         camera.ProcessKeyboard(RIGHT, deltaTime);
     }
@@ -901,8 +937,19 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
     }
     if (keys[GLFW_KEY_B]) {
         activar_burbujasChimenea = !activar_burbujasChimenea;
+        if (activar_burbujasChimenea) {
+            sndBubujas = SoundEngine->play2D("audio/bubbles.mp3", true, false, true);
+        }
+        //Detiene el sonido de las burbujas
+        if (!activar_burbujasChimenea) {
+            sndBubujas->stop(); //Detiene el sonido
+            sndBubujas = 0; //libera el recurso manejado
+        }
     }
     if (keys[GLFW_KEY_M]) {
+        //std::cout << "POSICION: " << camera.GetPosition().x << ", " << camera.GetPosition().y << ", " << camera.GetPosition().z << endl;
+        //std::cout << "YAW: " << camera.yaw << endl;
+        //std::cout << "PITCH: " << camera.pitch << endl;
         activar_medusas = !activar_medusas;
     }
 
@@ -946,11 +993,40 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 
     if (keys[GLFW_KEY_J]) {
         activar_jugueteMedusas = !activar_jugueteMedusas;
-        if (activar_jugueteMedusas)
+        if (activar_jugueteMedusas) {
             SpotLight = glm::vec3(0.760f, 0.0f, 0.756f);
-        else
+            sndJuguete = SoundEngine->play2D("audio/sleep_tone.mp3", true, false, true);
+        }
+        else {
             SpotLight = glm::vec3(0.0f);
+            sndJuguete->stop(); //Detiene el sonido
+            sndJuguete = 0; //libera el recurso manejado
+        }
     }
+    //Cambio de camara estatica
+    if (keys[GLFW_KEY_C]) {
+        bloquearCamara = true;
+        camera.position = camarasEstaticas[camaraEstaticaIndice]; 
+        camaraEstaticaIndice += 1;
+        if (camaraEstaticaIndice > 3)
+            camaraEstaticaIndice = 0;
+    }
+    //Camara libre
+    if (keys[GLFW_KEY_F]) {
+        bloquearCamara = false;
+    }
+    //Pausa y activa el soundtrack
+    if (keys[GLFW_KEY_P]) {
+        if (!sndSoundTrack->getIsPaused()) {
+            sndSoundTrack->setIsPaused(true);//Pausa el sonido
+        }
+        else
+        {
+            sndSoundTrack->setIsPaused(false); //activa el sonido
+        }
+
+    }
+
 }
 
 void MouseCallback(GLFWwindow* window, double xPos, double yPos)
@@ -967,7 +1043,6 @@ void MouseCallback(GLFWwindow* window, double xPos, double yPos)
 
     lastX = xPos;
     lastY = yPos;
-
     camera.ProcessMouseMovement(xOffset, yOffset);
 }
 
@@ -1079,6 +1154,7 @@ void animarReloj(glm::mat4* model) {
         case 6:
             if (relojTraslacion <= 0.0f and relojRotacion <= 0.0f) {
                 relojAnimacionEstado = 7;
+                SoundEngine->play2D("audio/alarmHorn.mp3", false);
             }
             relojTraslacion -= 0.1 * VELOCIDAD;
             relojRotacion -= 4.5 * VELOCIDAD;
@@ -1088,13 +1164,14 @@ void animarReloj(glm::mat4* model) {
         case 7:
             if (relojTraslacion >= 1.0f and relojRotacion >= 45.0f) {
                 relojAnimacionEstado = 8;
+                SoundEngine->play2D("audio/bubbles.mp3", false);
             }
             relojTraslacion += 0.1 * VELOCIDAD;
             relojRotacion += 4.5 * VELOCIDAD;
             *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
             *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(0.0f, 0.0f, 1.0f));
             break;
-        case 8:// TERMINIA Y EMPIZA BURBUJAS Y SONIDO FUERTE
+        case 8:// TERMINIA Y EMPIEZA BURBUJAS Y SONIDO FUERTE
             if (relojRotacion <= -45.0f) {
                 relojAnimacionEstado = 9;
             }
@@ -1102,6 +1179,7 @@ void animarReloj(glm::mat4* model) {
             *model = glm::translate(*model, glm::vec3(0, relojTraslacion, 0));
             *model = glm::rotate(*model, glm::radians(relojRotacion), glm::vec3(0.0f, 0.0f, 1.0f));
             activar_burbujasAlarma = true;
+            
             break;
         case 9:// Empiezan burbujas
             if (burbujasRelojContador >= 2) {
@@ -1157,6 +1235,7 @@ void animarBurbujaChimenea(glm::mat4* model, int burbuja) {
         }
         //Reinicia la traslacion de la burbuja
         else {
+
             burbujasChimeneaTraslacion[burbuja] = 0.0;
         }
     }

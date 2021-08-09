@@ -130,7 +130,7 @@ public:
 		return this->front;
 	}
 
-private:
+public:
 	// Camera Attributes
 	glm::vec3 position;
 	glm::vec3 front;
