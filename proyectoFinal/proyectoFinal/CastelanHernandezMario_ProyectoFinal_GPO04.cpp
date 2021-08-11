@@ -257,7 +257,7 @@ int main()
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Practica 9", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Proyecto Final", nullptr, nullptr);
 
     if (nullptr == window)
     {
@@ -1369,6 +1369,11 @@ void animarPelota(glm::mat4* model) {
                 rotacionPelota += 80 * VELOCIDAD;
             }
         }
+
+
+    }
+    else {
+        posicionPelota = 0;
     }
     *model = glm::translate(*model, glm::vec3(0, 0, posicionPelota));
     *model = glm::rotate(*model, glm::radians(rotacionPelota), glm::vec3(1.0f, 0.0f, 0.0f));
